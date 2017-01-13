@@ -13,9 +13,9 @@ class Document:
 	def getTitle(self):
 		return self.title
 	def createClip(self, start, length):
-		return Clip("_".join(["C", self.guid, str(start), str(length)), self, start, length)
+		return Clip("_".join(["C", self.guid, str(start), str(length)]), self, start, length)
 	def createEmbed(self, doc, start, length, pos):
-		ret=Embed("_".join(["E", self.guid, str(pos), doc.guid, str(start), str(length)), doc.createClip(start, length), self, pos)
+		ret=Embed("_".join(["E", self.guid, str(pos), doc.guid, str(start), str(length)]), doc.createClip(start, length), self, pos)
 		if(doc in self.embeds):
 			self.embeds[doc].append(ret)
 		else:
@@ -27,12 +27,13 @@ class Document:
 		return self.content[start:start+length]
 	def getEmbedsByPos(self):
 		embedsByPos={}
-		for item in self.embeds:
-			pos=item.getPos()
-			if not (pos in embedsByPos):
-				embedsByPos[pos]=[item]
-			else:
-				embedsByPos[pos].append[item]
+		for doc in self.embeds:
+			for item in self.embeds[doc]:
+				pos=item.getPos()
+				if not (pos in embedsByPos):
+					embedsByPos[pos]=[item]
+				else:
+					embedsByPos[pos].append[item]
 		return embedsByPos
 	def getEmbeds(self, start=0, end=-1):
 		embedsSorted=[]
@@ -110,7 +111,7 @@ class Document:
 						i+=len(ret[-1])
 					else:
 						delta2=delta-length
-						ret.append(chunks[chunk][delta:delta2]	
+						ret.append(chunks[chunk][delta:delta2])
 						user.purchaseSpan(self, i+delta, len(ret[-1]))
 						ax+=len(ret[-1])
 						i+=len(ret[-1])
@@ -123,15 +124,15 @@ class Document:
 		formattedSection=["<h1>"+self.title+"</h1>"]
 		section=self.getSection(start, length, user)
 		for chunk in section:
-			if(type(chunk)==Embed):
+			if(type(chunk)==str):
+				formattedSection.append(chunk)
+			else:
 				clip=chunk.clip
 				oDoc=clip.doc
 				title="<a href=\""+oDoc.guid+"\">"+oDoc.title+"</a>"
 				tmp="<p/ ><blockquote><table><th><td>"+title+"</td></th><tr><td>"
 				tmp+=chunk.getContent()+"</td></th></blockquote>"
 				formattedSection.append(tmp)
-			else:
-				formattedSection.append(chunk)
 		return "<p />".join(formattedSection).replace("\n", "<p />")
 class Clip:
 	def __init__(self, guid, doc, start, length):
@@ -148,7 +149,7 @@ class Clip:
 	def subClip(self, start, length):
 		return Clip("_".join([self.guid, str(self.start+start), str(length)]), self.doc, self.start+start, length)
 	def purchase(self, user):
-		return user.purchaseSpan(self.document, self.start, self.length)
+		return user.purchaseSpan(self.doc, self.start, self.length)
 
 class Embed:
 	def __init__(self, guid, clip, doc, pos):
@@ -179,7 +180,7 @@ class User:
 		self.owns=owns
 	def __repr__(self):
 		return self.guid
-	def createDoc(title, content, postdate, embeds):
+	def createDoc(self, title, content, postdate, embeds):
 		return Document(self.guid+str(postdate), self, title, content, postdate, embeds)
 	def purchaseSpan(self, document, start, length):
 		if(document.owner.guid==self.guid):
@@ -219,10 +220,10 @@ class User:
 		return True
 
 def test():
-	alice=User("alice", "Alice", 0, [])
-	bob=User("bob", "Bob", 1000, [])
-	plusses=alice.createDoc("Plusses", "+"*500, 0, [])
-	minuses=alice.createDoc("Minuses", "-"*500, 1, [])
+	alice=User("alice", "Alice", 0, {})
+	bob=User("bob", "Bob", 1000, {})
+	plusses=alice.createDoc("Plusses", "+"*500, 0, {})
+	minuses=alice.createDoc("Minuses", "-"*500, 1, {})
 	print(alice)
 	print(alice.balance)
 	print(alice.owns)
@@ -235,4 +236,4 @@ def test():
 	print(minuses.getFormattedSection(0, 1000, bob))
 	print(alice.balance)
 	print(bob.balance)
-
+test()
